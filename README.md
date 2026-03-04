@@ -1,99 +1,51 @@
-# Department Engagement & Career Platform (DECP)
+# UniConnect — Department Engagement & Career Platform (DECP)
 
-The Department Engagement & Career Platform (DECP) is a microservices-based social and career platform designed for current students and alumni of the Department of Computer Engineering, University of Peradeniya. It facilitates networking, career opportunities, and academic collaboration through a modular, scalable architecture.
+> **CO528 Applied Software Architecture — Mini Project**
+> Department of Computer Engineering, University of Peradeniya
 
-## 🚀 Project Overview
-DECP focuses on architectural modularity and integration. It allows students to connect with alumni, share posts, apply for jobs/internships, and participate in department events.
+## Overview
 
-### Core Features
-- **User Management:** Role-based access (Student, Alumni, Admin) with secure JWT authentication.
-- **Feed & Media:** A social wall for sharing updates, images, and interacting via likes and comments.
-- **Job & Internship Portal:** Alumni can post opportunities; students can view and apply for them.
-- **Interactive Architecture:** Detailed system designs (SOA, Enterprise, Modularity) implemented as interactive React components.
+UniConnect is a department engagement platform designed for current students, alumni, and administrators, with academics/companies participating through platform-managed workflows. It enables users to connect, share posts, apply for jobs/internships, collaborate on research, and participate in events through both web and mobile clients.
 
----
+The project focuses on **architectural design**, **modularity**, **integration**, **cloud deployment**, and **quality attribute justification** rather than full feature completeness.
 
-## 🛠 Tech Stack
-- **Backend:** Java 17, Spring Boot 3.2.3, Spring Cloud Gateway.
-- **Frontend:** React (TypeScript), Axios, React Router.
-- **Databases:** PostgreSQL (Relational), MongoDB (Document-store), Redis (Caching/Notifications).
-- **Messaging:** RabbitMQ (Asynchronous event-driven communication).
-- **DevOps:** Docker & Docker Compose for infrastructure orchestration.
+## Documentation Index
 
----
+| # | Document | Description | Diagram |
+|---|----------|-------------|---------|
+| 1 | [Project Overview](docs/01-project-overview.md) | Scope, objectives, team roles, and requirements | - |
+| 2 | [Enterprise Architecture](docs/02-enterprise-architecture.md) | High-level layered architecture with actors, clients, gateway, services, and data | [Enterprise Architecture](diagrams/Enterprise%20Architecture%20Diagram.png) |
+| 3 | [SOA Diagram & APIs](docs/03-soa-diagram.md) | Service interactions, sequence diagrams, and REST API contracts | [SOA](diagrams/SOA%20Diagram.png) |
+| 4 | [Product Modularity](docs/04-product-modularity.md) | Core vs. optional modules, responsibilities, and design principles | [Product Modularity](diagrams/Product%20Modularity%20Diagram.png) |
+| 5 | [Deployment Diagram](docs/05-deployment-diagram.md) | Cloud infrastructure, Kubernetes orchestration, and storage | [Deployment](diagrams/Deployment%20Diagram.png) |
+| 6 | [Technology Stack](docs/06-technology-stack.md) | Languages, frameworks, databases, and tooling choices | [Tech Stack](diagrams/Technology%20Stack%20Diagram.png) |
+| 7 | [API Specification](docs/07-api-specification.md) | Full REST endpoint reference per microservice | - |
+| 8 | [Data Model](docs/08-data-model.md) | ER diagram and schema definitions for SQL and NoSQL stores | [ER Diagram](diagrams/ER%20Diagram.png) |
+| 9 | [Use Case Diagram](docs/09-use-case-diagram.md) | Actor-use-case relationships for all core modules | [Use Case](diagrams/Use%20Case%20Diagram.png) |
+| 10 | [Quality Attribute Justifications](docs/10-quality-attributes.md) | NFR analysis and architectural decision rationale | - |
+| 11 | [Research Findings](docs/11-research-findings.md) | Analysis of LinkedIn, Facebook, and proposed improvements | - |
+| 12 | [Cloud Deployment Details](docs/12-cloud-deployment.md) | Backend/database setup, scalability, and deployment steps | - |
+| 13 | [Documentation Audit](docs/13-documentation-audit.md) | Change log of documentation consistency and naming fixes | - |
 
-## 🛠 Prerequisites
-- **Java 17** or higher.
-- **Node.js** (v18+ recommended).
-- **Docker & Docker Desktop**.
-- **Maven** (optional, you can use the provided `./mvnw`).
+## Architecture at a Glance
 
----
+- **Architecture Style**: Microservices / SOA
+- **Core Services**: User Service, Feed Service, Career Service + API Gateway
+- **Clients**: React (Web), React Native (Mobile)
+- **Databases**: MySQL (structured data), MongoDB/Neo4j (feed & relationships)
+- **Cloud**: AWS / GCP with Docker + Kubernetes
+- **Auth**: JWT-based via centralized API Gateway
 
-## 🏃 How to Run the Application
+## Team Roles
 
-### 1. Start Infrastructure (Docker)
-Ensure Docker is running, then navigate to the root folder and start the core services:
-```bash
-docker-compose up -d
-```
-*This starts PostgreSQL, MongoDB (on port 27018), Redis, and RabbitMQ.*
+| Role | Responsibility |
+|------|----------------|
+| Enterprise Architect | High-level system integration and stakeholder alignment |
+| Solution Architect | End-to-end technical solution design |
+| Application Architect | Microservice design, API contracts, and module structure |
+| Security Architect | Authentication, authorization, and security policies |
+| DevOps Architect | CI/CD, containerization, cloud deployment, and monitoring |
 
-### 2. Start Backend Services
-Navigate to `backend/` and start each service in a separate terminal (or use IntelliJ's Run Configuration):
+## License
 
-1. **API Gateway (Port 8080):**
-   ```bash
-   ./mvnw -pl api-gateway spring-boot:run
-   ```
-2. **Auth Service (Port 8081):**
-   ```bash
-   ./mvnw -pl auth-service spring-boot:run
-   ```
-3. **User Service (Port 8082):**
-   ```bash
-   ./mvnw -pl user-service spring-boot:run
-   ```
-4. **Post Service (Port 8083):**
-   ```bash
-   ./mvnw -pl post-service spring-boot:run
-   ```
-5. **Job Service (Port 8084):**
-   ```bash
-   ./mvnw -pl job-service spring-boot:run
-   ```
-
-### 3. Start Frontend Client
-Navigate to `frontend/web-client` and start the React app:
-```bash
-cd frontend/web-client
-npm install
-npm start
-```
-*The portal will be available at `http://localhost:3000`.*
-
----
-
-## 🐳 Containerization & Deployment
-Each service includes a `Dockerfile` for independent deployment (e.g., to AWS ECS Fargate).
-
-To build a backend service image:
-1. Build the JAR: `mvn clean package -DskipTests` (from `backend/`)
-2. Build Docker: `docker build -t decp-auth-service ./auth-service` (from `backend/`)
-
-To build the frontend image:
-`docker build -t decp-web-client .` (from `frontend/web-client`)
-
----
-
-## 📂 Project Structure
-- **/backend:** Spring Boot microservices.
-- **/frontend:** React-based web client.
-- **/designs:** Interactive architecture diagrams (.jsx components).
-
-## 🛡 Security & Roles
-- **STUDENT:** Can create posts, view/apply for jobs, and search the alumni directory.
-- **ALUMNI:** Can create posts, **post new jobs/internships**, and browse the platform.
-- **ADMIN:** Full access to all modules and analytics (planned).
-
-Authentication is handled via **JWT (JSON Web Tokens)** passed from the API Gateway to all downstream microservices.
+This project is developed for academic purposes as part of CO528 — Applied Software Architecture.

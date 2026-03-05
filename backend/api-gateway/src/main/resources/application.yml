@@ -58,6 +58,14 @@ spring:
           filters:
             - Jwt
 
+        # Event Service: /api/events/** -> localhost:8085/api/events/**
+        - id: event-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/events/**
+          filters:
+            - Jwt
+
 management:
   endpoints:
     web:

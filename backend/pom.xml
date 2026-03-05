@@ -30,6 +30,7 @@
         <module>auth-service</module>
         <module>post-service</module>
         <module>job-service</module>
+        <module>event-service</module>
     </modules>
 
 

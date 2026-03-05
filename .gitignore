@@ -40,4 +40,4 @@ yarn-error.log*
 .docker/
 docker-compose.override.yml
 
-PROJECT_PLAN.MD
+PROJECT_PLAN.md

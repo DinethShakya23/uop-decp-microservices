@@ -1,6 +1,7 @@
 package com.decp.user_service.controller;
 
 import com.decp.user_service.dto.UserRegistrationRequest;
+import com.decp.user_service.dto.UserLoginRequest;
 import com.decp.user_service.model.User;
 import com.decp.user_service.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,5 +34,31 @@ public class UserController {
         userRepository.save(newUser);
 
         return ResponseEntity.ok("User registered successfully as a " + request.getRole() + "!");
+    }
+
+
+
+
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody UserLoginRequest request) {
+        // 1. Find the user by email
+        var optionalUser = userRepository.findByEmail(request.getEmail());
+
+        // 2. If user doesn't exist, return an error
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(401).body("Error: Invalid email or password");
+        }
+
+        User user = optionalUser.get();
+
+        // 3. Check the password
+        // WARNING: This is plain text comparison for development only!
+        // We will implement proper BCrypt password hashing later.
+        if (!user.getPassword().equals(request.getPassword())) {
+            return ResponseEntity.status(401).body("Error: Invalid email or password");
+        }
+
+        // 4. Success! (Later, we will generate and return a JWT Token here)
+        return ResponseEntity.ok("Welcome back, " + user.getName() + "! You are logged in as a " + user.getRole() + ".");
     }
 }

@@ -1,0 +1,9 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: feed-service
+
+  mongodb:
+    uri: mongodb://root:rootpassword@localhost:27018/decp_feed?authSource=admin

@@ -32,6 +32,8 @@
         <module>job-service</module>
         <module>event-service</module>
         <module>notification-service</module>
+        <module>research-service</module>
+        <module>messaging-service</module>
     </modules>
 
 

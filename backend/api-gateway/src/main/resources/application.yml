@@ -74,6 +74,28 @@ spring:
           filters:
             - Jwt
 
+        # Messaging Service WebSocket: /ws/** -> localhost:8087
+        - id: messaging-service-ws
+          uri: ws://localhost:8087
+          predicates:
+            - Path=/ws/**
+
+        # Messaging Service REST: /api/conversations/** -> localhost:8087
+        - id: messaging-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/conversations/**
+          filters:
+            - Jwt
+
+        # Research Service: /api/research/** -> localhost:8086/api/research/**
+        - id: research-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/research/**
+          filters:
+            - Jwt
+
 management:
   endpoints:
     web:

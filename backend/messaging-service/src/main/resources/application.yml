@@ -1,0 +1,12 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: messaging-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:admin1234@localhost:27018/decp_messaging?authSource=admin}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}

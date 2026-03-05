@@ -96,6 +96,14 @@ spring:
           filters:
             - Jwt
 
+        # Analytics Service: /api/analytics/** -> localhost:8089/api/analytics/**
+        - id: analytics-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/analytics/**
+          filters:
+            - Jwt
+
 management:
   endpoints:
     web:

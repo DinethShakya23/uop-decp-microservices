@@ -34,6 +34,7 @@
         <module>notification-service</module>
         <module>research-service</module>
         <module>messaging-service</module>
+        <module>analytics-service</module>
     </modules>
 
 

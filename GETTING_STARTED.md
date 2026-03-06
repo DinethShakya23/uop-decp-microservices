@@ -59,8 +59,15 @@ Edit `.env` if you need to change any default credentials. The defaults work out
 ```bash
 task install:frontend
 ```
+> **TROUBLESHOOT**
+>
+> If the task command is not recognized, you may need to add the Task installation directory to your PATH environment variable
 
 ### 4. Start everything with a single command
+
+> **IMPORTANT**
+>
+> Make sure the Docker engine is running before executing this command.  
 
 ```bash
 task start

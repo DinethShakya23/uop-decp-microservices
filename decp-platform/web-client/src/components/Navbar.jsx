@@ -34,6 +34,10 @@ export default function Navbar() {
             {token ? (
                 <>
                     <Link to="/feed" style={{ textDecoration: 'none', color: '#333' }}>Feed</Link>
+
+                    {/* --- NEW CAREERS LINK --- */}
+                    <Link to="/careers" style={{ textDecoration: 'none', color: '#333' }}>Careers</Link>
+
                     <button
                         onClick={handleLogout}
                         style={{

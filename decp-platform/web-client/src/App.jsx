@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Register from './pages/Register';
 import LoginPage from "./pages/LoginPage.jsx";
-import FeedPage from "./pages/FeedPage.jsx"; // <-- Notice the updated path!
+import FeedPage from "./pages/FeedPage.jsx";
+import CareersPage from "./pages/CareersPage.jsx"; // <-- Notice the updated path!
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/feed" element={<FeedPage />} />
+                        <Route path="/careers" element={<CareersPage />} />
                     </Routes>
                 </div>
             </div>

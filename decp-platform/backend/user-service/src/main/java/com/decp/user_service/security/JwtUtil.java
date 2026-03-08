@@ -11,20 +11,19 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // Generate a secure, random cryptographic key for signing the tokens
-    // In production, this should be a long string saved in your application.yml!
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // A hardcoded 256-bit secret string so both microservices can read the token
+    private final String SECRET = "ThisIsASuperSecretKeyForDepartmentEngagementPlatformMakeItLongEnough";
+    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    // Set token expiration time (e.g., 24 hours)
     private final long EXPIRATION_TIME = 86400000;
 
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
-                .claim("role", role) // Store the user's role inside the token
+                .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 }

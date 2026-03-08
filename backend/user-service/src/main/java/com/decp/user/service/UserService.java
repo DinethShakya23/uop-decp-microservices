@@ -65,6 +65,8 @@ public class UserService {
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setPassword(user.getPassword());
+        dto.setEmail(user.getEmail());
+        dto.setFullName(user.getFullName());
         dto.setRole(user.getRole());
         return dto;
     }

@@ -24,7 +24,7 @@ public class EventService {
     private final RsvpRepository rsvpRepository;
     private final EventPublisher eventPublisher;
 
-    public EventResponse createEvent(EventRequest request, String userName) {
+    public EventResponse createEvent(EventRequest request, Long userId, String userName) {
         Event event = Event.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -32,6 +32,7 @@ public class EventService {
                 .eventDate(request.getEventDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
+                .organizer(userId)
                 .organizerName(userName)
                 .category(request.getCategory())
                 .maxAttendees(request.getMaxAttendees())
@@ -89,7 +90,7 @@ public class EventService {
         eventRepository.delete(event);
     }
 
-    public RsvpResponse rsvpToEvent(Long eventId, RsvpRequest request, String userName) {
+    public RsvpResponse rsvpToEvent(Long eventId, RsvpRequest request, Long userId, String userName) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found with id: " + eventId));
 
@@ -100,8 +101,8 @@ public class EventService {
             }
         }
 
-        // Check for existing RSVP by this user (matched by userName since userId isn't in gateway headers)
-        Rsvp existingRsvp = findRsvpByEventAndUserName(eventId, userName);
+        // Check for existing RSVP by this user
+        Rsvp existingRsvp = rsvpRepository.findByEventIdAndUserId(eventId, userId).orElse(null);
         Rsvp saved;
         if (existingRsvp != null) {
             existingRsvp.setStatus(request.getStatus());
@@ -109,6 +110,7 @@ public class EventService {
         } else {
             Rsvp rsvp = Rsvp.builder()
                     .eventId(eventId)
+                    .userId(userId)
                     .userName(userName)
                     .status(request.getStatus())
                     .build();

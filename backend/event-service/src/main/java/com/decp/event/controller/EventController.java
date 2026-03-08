@@ -23,11 +23,12 @@ public class EventController {
     public ResponseEntity<EventResponse> createEvent(
             @RequestHeader("X-User-Name") String userName,
             @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody EventRequest request) {
         if (!"ALUMNI".equals(userRole) && !"ADMIN".equals(userRole)) {
             return ResponseEntity.status(403).build();
         }
-        return ResponseEntity.ok(eventService.createEvent(request, userName));
+        return ResponseEntity.ok(eventService.createEvent(request, userId, userName));
     }
 
     @GetMapping
@@ -66,8 +67,9 @@ public class EventController {
     public ResponseEntity<RsvpResponse> rsvpToEvent(
             @PathVariable Long id,
             @RequestHeader("X-User-Name") String userName,
+            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody RsvpRequest request) {
-        return ResponseEntity.ok(eventService.rsvpToEvent(id, request, userName));
+        return ResponseEntity.ok(eventService.rsvpToEvent(id, request, userId, userName));
     }
 
     @GetMapping("/{id}/attendees")

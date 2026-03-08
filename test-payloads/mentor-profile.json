@@ -1,0 +1,7 @@
+{
+  "role": "MENTOR",
+  "bio": "E2E mentor",
+  "expertise": ["Java", "Spring"],
+  "availability": "AVAILABLE",
+  "department": "CS"
+}

@@ -31,9 +31,11 @@ export default function LoginPage() {
       await login({ username: username.trim(), password });
       navigate("/", { replace: true });
     } catch (err: any) {
+      const data = err.response?.data;
       setError(
-        err.response?.data?.message ||
-          err.response?.data ||
+        data?.message ||
+          data?.error ||
+          (typeof data === "string" ? data : null) ||
           "Login failed. Check your credentials.",
       );
     }
@@ -64,9 +66,11 @@ export default function LoginPage() {
       await login({ username: regUsername.trim(), password: regPassword });
       navigate("/", { replace: true });
     } catch (err: any) {
+      const data = err.response?.data;
       setError(
-        err.response?.data?.message ||
-          err.response?.data ||
+        data?.message ||
+          data?.error ||
+          (typeof data === "string" ? data : null) ||
           "Registration failed.",
       );
     }

@@ -25,7 +25,7 @@ public class ResearchService {
     private final ResearchEventPublisher eventPublisher;
 
     @Transactional
-    public ResearchResponse uploadResearch(ResearchRequest request, String userName) {
+    public ResearchResponse uploadResearch(ResearchRequest request, Long userId, String userName) {
         Research research = Research.builder()
                 .title(request.getTitle())
                 .researchAbstract(request.getResearchAbstract())
@@ -34,6 +34,7 @@ public class ResearchService {
                 .documentUrl(request.getDocumentUrl())
                 .doi(request.getDoi())
                 .category(request.getCategory())
+                .createdBy(userId)
                 .createdByName(userName)
                 .build();
 

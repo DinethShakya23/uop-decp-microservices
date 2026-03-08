@@ -36,7 +36,8 @@ public class AuthService {
 
             String token = jwtUtils.generateToken(user.getUsername(), claims);
             
-            // Return public DTO (without password) in response
+            // Strip password before sending to client
+            user.setPassword(null);
             return new AuthResponse(token, user);
         } catch (Exception e) {
             throw new RuntimeException("Authentication failed: " + e.getMessage());

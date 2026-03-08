@@ -37,4 +37,15 @@ public class FeedController {
         List<Post> posts = postRepository.findAll();
         return ResponseEntity.ok(posts);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deletePost(@PathVariable String id) {
+        try {
+            // Assuming you have a postRepository injected in your controller
+            postRepository.deleteById(id);
+            return ResponseEntity.ok("Post deleted successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to delete post");
+        }
+    }
 }

@@ -60,7 +60,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            // Token is expired, tampered with, or forged
+            System.out.println("TOKEN REJECTED BECAUSE: " + e.getMessage()); // <-- Add this
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Token validation failed!");
         }

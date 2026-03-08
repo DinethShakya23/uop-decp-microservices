@@ -1,0 +1,10 @@
+{
+  "title": "Test Event",
+  "description": "E2E test event",
+  "location": "Online",
+  "eventDate": "2026-04-01",
+  "startTime": "2026-04-01T10:00:00",
+  "endTime": "2026-04-01T12:00:00",
+  "category": "WORKSHOP",
+  "maxAttendees": 100
+}

@@ -1,0 +1,9 @@
+{
+  "title": "Test Job",
+  "description": "E2E test job",
+  "company": "Test Corp",
+  "location": "Remote",
+  "salary": "50000",
+  "type": "FULL_TIME",
+  "postedBy": 13
+}

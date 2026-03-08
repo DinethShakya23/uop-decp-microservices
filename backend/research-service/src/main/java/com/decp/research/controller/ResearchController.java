@@ -22,11 +22,12 @@ public class ResearchController {
     public ResponseEntity<ResearchResponse> uploadResearch(
             @RequestHeader("X-User-Name") String userName,
             @RequestHeader("X-User-Role") String userRole,
+            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody ResearchRequest request) {
         if (!"ALUMNI".equals(userRole) && !"ADMIN".equals(userRole)) {
             return ResponseEntity.status(403).build();
         }
-        return ResponseEntity.ok(researchService.uploadResearch(request, userName));
+        return ResponseEntity.ok(researchService.uploadResearch(request, userId, userName));
     }
 
     @GetMapping

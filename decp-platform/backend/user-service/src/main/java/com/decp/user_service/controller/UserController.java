@@ -2,7 +2,9 @@ package com.decp.user_service.controller;
 
 import com.decp.user_service.dto.UserLoginRequest;
 import com.decp.user_service.dto.UserRegistrationRequest;
+import com.decp.user_service.model.Connection;
 import com.decp.user_service.model.User;
+import com.decp.user_service.repository.ConnectionRepository;
 import com.decp.user_service.repository.UserRepository;
 import com.decp.user_service.security.JwtUtil;
 import org.mindrot.jbcrypt.BCrypt;
@@ -22,6 +24,9 @@ public class UserController {
     private UserRepository userRepository;
 
     @Autowired
+    private ConnectionRepository connectionRepository;
+
+    @Autowired
     private JwtUtil jwtUtil;
 
     @PostMapping("/register")
@@ -38,6 +43,7 @@ public class UserController {
                 .passwordHash(hashedPassword)
                 .role(request.getRole())
                 .status("ACTIVE")
+                .profileViews(0L)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -78,24 +84,36 @@ public class UserController {
     }
     
     @GetMapping("/{id}/profile")
-    public ResponseEntity<?> getProfile(@PathVariable Long id) {
-        Optional<User> user = userRepository.findById(id);
-        if (user.isEmpty()) {
+    public ResponseEntity<?> getProfile(@PathVariable Long id, @RequestHeader(value = "X-User-Id", required = false) String viewerIdStr) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         
-        User u = user.get();
+        User user = optionalUser.get();
+
+        // Increment view count if the viewer is not the owner
+        if (viewerIdStr != null) {
+            Long viewerId = Long.parseLong(viewerIdStr);
+            if (!viewerId.equals(id)) {
+                user.setProfileViews(user.getProfileViews() + 1);
+                userRepository.save(user);
+            }
+        }
+        
+        long connections = connectionRepository.countByUserId(id);
+
         return ResponseEntity.ok(Map.of(
-            "id", u.getId(),
-            "name", u.getName(),
-            "email", u.getEmail(),
-            "role", u.getRole().name(),
-            "bio", u.getBio() != null ? u.getBio() : "",
-            "department", u.getDepartment() != null ? u.getDepartment() : "",
-            "graduationYear", u.getGraduationYear() != null ? u.getGraduationYear() : 0,
-            "researchInterests", u.getResearchInterests() != null ? u.getResearchInterests() : "[]",
-            "courseProjects", u.getCourseProjects() != null ? u.getCourseProjects() : "[]",
-            "createdAt", u.getCreatedAt() != null ? u.getCreatedAt() : ""
+            "id", user.getId(),
+            "name", user.getName(),
+            "email", user.getEmail(),
+            "role", user.getRole().name(),
+            "bio", user.getBio() != null ? user.getBio() : "",
+            "department", user.getDepartment() != null ? user.getDepartment() : "",
+            "graduationYear", user.getGraduationYear() != null ? user.getGraduationYear() : 0,
+            "profileViews", user.getProfileViews(),
+            "connections", connections,
+            "createdAt", user.getCreatedAt() != null ? user.getCreatedAt() : ""
         ));
     }
 
@@ -111,12 +129,37 @@ public class UserController {
         if (updates.containsKey("bio")) user.setBio((String) updates.get("bio"));
         if (updates.containsKey("department")) user.setDepartment((String) updates.get("department"));
         if (updates.containsKey("graduationYear")) user.setGraduationYear((Integer) updates.get("graduationYear"));
-        if (updates.containsKey("researchInterests")) user.setResearchInterests(updates.get("researchInterests").toString());
-        if (updates.containsKey("courseProjects")) user.setCourseProjects(updates.get("courseProjects").toString());
         
         user.setUpdatedAt(LocalDateTime.now());
         User updatedUser = userRepository.save(user);
 
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @PostMapping("/{id}/connect")
+    public ResponseEntity<?> connect(@PathVariable Long id, @RequestHeader("X-User-Id") String userIdStr) {
+        Long currentUserId = Long.parseLong(userIdStr);
+        if (currentUserId.equals(id)) {
+            return ResponseEntity.badRequest().body("You cannot connect with yourself!");
+        }
+
+        // Check if already connected
+        if (connectionRepository.findByUserIdAndConnectedUserId(currentUserId, id).isPresent()) {
+            return ResponseEntity.ok("Already connected!");
+        }
+
+        // Bidi-connection for this prototype (LinkedIn style usually has requests, but we'll do direct follow/connect)
+        Connection c1 = Connection.builder().userId(currentUserId).connectedUserId(id).build();
+        Connection c2 = Connection.builder().userId(id).connectedUserId(currentUserId).build();
+        
+        connectionRepository.save(c1);
+        connectionRepository.save(c2);
+
+        return ResponseEntity.ok("Connected successfully!");
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> listUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
     }
 }

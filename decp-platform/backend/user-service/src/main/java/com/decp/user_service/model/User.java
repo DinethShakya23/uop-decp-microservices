@@ -39,13 +39,17 @@ public class User {
     private Integer graduationYear;
 
     @Column(name = "research_interests", columnDefinition = "TEXT")
-    private String researchInterests; // JSON array as text
+    private String researchInterests; 
 
     @Column(name = "course_projects", columnDefinition = "TEXT")
-    private String courseProjects; // JSON array as text
+    private String courseProjects;
 
     @Column(columnDefinition = "VARCHAR(255) DEFAULT 'ACTIVE'")
     private String status = "ACTIVE";
+
+    @Builder.Default
+    @Column(name = "profile_views")
+    private Long profileViews = 0L;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

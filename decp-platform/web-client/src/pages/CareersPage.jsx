@@ -9,6 +9,7 @@ export default function CareersPage() {
 
     const currentUserId = localStorage.getItem('userId');
     const currentUserName = localStorage.getItem('userName');
+    const role = localStorage.getItem('role');
 
     const [newJob, setNewJob] = useState({
         title: '', company: '', description: '', type: 'JOB'
@@ -73,7 +74,6 @@ export default function CareersPage() {
         e.preventDefault();
         setApplyStatus('Submitting...');
         const token = localStorage.getItem('token');
-
         try {
             await axios.post(`/api/jobs/${selectedJob.id}/apply`, {
                 coverLetter: applicationData.coverLetter,
@@ -81,14 +81,12 @@ export default function CareersPage() {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
             setApplyStatus('success');
             setTimeout(() => {
                 setSelectedJob(null);
                 setApplyStatus('');
                 setApplicationData({ coverLetter: '', resumeUrl: '' });
             }, 2000);
-
         } catch (err) {
             setApplyStatus('error');
         }
@@ -99,13 +97,11 @@ export default function CareersPage() {
             setExpandedJobId(null);
             return;
         }
-
         const token = localStorage.getItem('token');
         try {
             const response = await axios.get(`/api/jobs/applications/job/${jobId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
             setJobApplicants({ ...jobApplicants, [jobId]: response.data });
             setExpandedJobId(jobId);
         } catch (err) {
@@ -114,144 +110,125 @@ export default function CareersPage() {
     };
 
     return (
-        <div className="container" style={{ maxWidth: '800px' }}>
-            <h2 style={{ marginBottom: '25px' }}>Career Opportunities</h2>
-            {error && <p style={{ color: 'var(--danger-color)', marginBottom: '15px' }}>{error}</p>}
+        <div className="main-layout">
+            {/* Sidebar */}
+            <aside className="sidebar-left">
+                <div className="li-card" style={{ padding: '12px' }}>
+                    <div style={{ fontWeight: '600', fontSize: '16px', marginBottom: '16px' }}>Jobs for you</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ fontSize: '14px', color: 'var(--linkedin-text-secondary)', fontWeight: '600', cursor: 'pointer' }}>My Jobs</div>
+                        <div style={{ fontSize: '14px', color: 'var(--linkedin-text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Job Alerts</div>
+                        <div style={{ fontSize: '14px', color: 'var(--linkedin-text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Skill Assessments</div>
+                        <div style={{ fontSize: '14px', color: 'var(--linkedin-text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Interview Prep</div>
+                    </div>
+                </div>
+            </aside>
 
-            {!selectedJob && (
-                <div className="card" style={{ border: '1px solid #dddfe2' }}>
-                    <h3 style={{ marginBottom: '15px', color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Post a New Opportunity</h3>
-                    <form onSubmit={handleCreateJob}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                            <div className="form-group">
-                                <label className="label">Job Title</label>
-                                <input required placeholder="e.g. Software Engineer" className="input" value={newJob.title} onChange={e => setNewJob({...newJob, title: e.target.value})} />
+            {/* Main Area */}
+            <main>
+                {(role === 'ALUMNI' || role === 'ADMIN') && (
+                    <div className="li-card" style={{ padding: '16px' }}>
+                        <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Post a New Job</div>
+                        <form onSubmit={handleCreateJob} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                <input required placeholder="Job Title" className="li-input" style={{ flex: '1 1 200px' }} value={newJob.title} onChange={e => setNewJob({...newJob, title: e.target.value})} />
+                                <input required placeholder="Company" className="li-input" style={{ flex: '1 1 200px' }} value={newJob.company} onChange={e => setNewJob({...newJob, company: e.target.value})} />
                             </div>
-                            <div className="form-group">
-                                <label className="label">Company Name</label>
-                                <input required placeholder="e.g. Google" className="input" value={newJob.company} onChange={e => setNewJob({...newJob, company: e.target.value})} />
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Job Type</label>
-                            <select value={newJob.type} className="select" onChange={e => setNewJob({...newJob, type: e.target.value})}>
-                                <option value="JOB">Job (Full-Time / Part-Time)</option>
+                            <select value={newJob.type} className="li-input" onChange={e => setNewJob({...newJob, type: e.target.value})}>
+                                <option value="JOB">Full-Time Job</option>
                                 <option value="INTERNSHIP">Internship</option>
                             </select>
-                        </div>
-                        <div className="form-group" style={{ marginTop: '15px' }}>
-                            <label className="label">Job Description</label>
-                            <textarea required rows="4" className="textarea" placeholder="Describe the role and requirements..." value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                            <button type="submit" className="btn btn-primary" style={{ padding: '8px 24px' }}>Post Job</button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {jobs.map((job) => {
-                    const isOwner = String(job.postedBy) === String(currentUserId);
-                    return (
-                        <div key={job.id} className="card" style={{ position: 'relative' }}>
-                            {isOwner && (
-                                <button onClick={() => handleDeleteJob(job.id)} className="btn btn-danger" style={{ position: 'absolute', top: '20px', right: '20px', padding: '5px 10px', fontSize: '0.8rem' }}>Delete</button>
-                            )}
-                            <div style={{ marginBottom: '15px' }}>
-                                <h3 style={{ margin: '0 0 5px 0' }}>{job.title}</h3>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>{job.company}</span>
-                                    <span style={{ color: '#ccc' }}>•</span>
-                                    <span className={`badge ${job.type === 'INTERNSHIP' ? 'badge-green' : 'badge-blue'}`}>{job.type}</span>
-                                </div>
+                            <textarea required rows="4" className="li-input" placeholder="Job Description and requirements..." value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button type="submit" className="li-btn li-btn-primary">Post Job</button>
                             </div>
-                            
-                            <div style={{ fontSize: '1rem', lineHeight: '1.6', color: '#1c1e21', whiteSpace: 'pre-wrap', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '6px' }}>
-                                {job.description}
-                            </div>
-
-                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <button onClick={() => setSelectedJob(job)} className="btn btn-primary" style={{ borderRadius: '4px' }}>
-                                    Apply Internally
-                                </button>
-                                <small style={{ color: 'var(--text-secondary)' }}>Posted by {job.postedBy}</small>
-                            </div>
-
-                            {isOwner && (
-                                <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #eee' }}>
-                                    <button
-                                        onClick={() => handleToggleApplicants(job.id)}
-                                        className="btn btn-secondary"
-                                        style={{ padding: '6px 15px', fontSize: '0.85rem' }}
-                                    >
-                                        {expandedJobId === job.id ? 'Hide Applicants' : 'View Applicants'}
-                                    </button>
-
-                                    {expandedJobId === job.id && (
-                                        <div style={{ marginTop: '15px', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                                            <h4 style={{ margin: '0 0 15px 0', fontSize: '1.1rem' }}>Applicant Dashboard</h4>
-                                            {(!jobApplicants[job.id] || jobApplicants[job.id].length === 0) ? (
-                                                <p style={{ margin: 0, color: '#666', fontSize: '0.9em' }}>No applications yet.</p>
-                                            ) : (
-                                                jobApplicants[job.id].map(app => (
-                                                    <div key={app.id} className="card" style={{ marginBottom: '10px', padding: '15px', boxShadow: 'none', border: '1px solid #eee' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                            <strong style={{ fontSize: '1.05rem' }}>Applicant ID: {app.applicantId}</strong>
-                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                                                {new Date(app.submittedAt).toLocaleDateString()}
-                                                            </span>
-                                                        </div>
-                                                        <p style={{ margin: '8px 0', fontSize: '0.95em', whiteSpace: 'pre-wrap' }}>
-                                                            {app.coverLetter}
-                                                        </p>
-                                                        <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.9rem', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>
-                                                            📄 View Resume/Portfolio
-                                                        </a>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {selectedJob && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div className="card" style={{ width: '90%', maxWidth: '500px', position: 'relative', padding: '30px' }}>
-                        <button onClick={() => { setSelectedJob(null); setApplyStatus(''); }} style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#999' }}>&times;</button>
-                        <h3 style={{ margin: '0 0 8px 0' }}>Apply for {selectedJob.title}</h3>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '25px' }}>at {selectedJob.company}</p>
-
-                        <form onSubmit={handleSubmitApplication} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                            <div className="form-group">
-                                <label className="label">Cover Letter / Note</label>
-                                <textarea
-                                    required rows="5" placeholder="Why are you a good fit?"
-                                    value={applicationData.coverLetter}
-                                    className="textarea"
-                                    onChange={e => setApplicationData({...applicationData, coverLetter: e.target.value})}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="label">Resume Link (Google Drive/Portfolio)</label>
-                                <input
-                                    required placeholder="https://..."
-                                    value={applicationData.resumeUrl}
-                                    className="input"
-                                    onChange={e => setApplicationData({...applicationData, resumeUrl: e.target.value})}
-                                />
-                            </div>
-                            <button type="submit" className="btn btn-primary" style={{ padding: '12px', marginTop: '10px' }}>
-                                Submit Application
-                            </button>
                         </form>
-                        {applyStatus === 'success' && <p style={{ textAlign: 'center', marginTop: '15px', fontWeight: 'bold', color: 'var(--success-color)' }}>Application Submitted Successfully!</p>}
-                        {applyStatus === 'error' && <p style={{ textAlign: 'center', marginTop: '15px', fontWeight: 'bold', color: 'var(--danger-color)' }}>Failed to submit application. Try again.</p>}
+                    </div>
+                )}
+
+                <div className="li-card" style={{ padding: '12px 16px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Recommended for you</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                        {jobs.length === 0 ? (
+                            <p style={{ color: 'var(--linkedin-text-secondary)', padding: '20px 0' }}>No jobs found.</p>
+                        ) : (
+                            jobs.map((job) => {
+                                const isOwner = String(job.postedBy) === String(currentUserId);
+                                return (
+                                    <div key={job.id} style={{ padding: '16px 0', borderBottom: '1px solid var(--linkedin-border)', position: 'relative' }}>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <div style={{ width: '56px', height: '56px', background: '#f3f2ef', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 'bold', color: 'var(--linkedin-blue)', borderRadius: '4px' }}>
+                                                {job.company.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--linkedin-blue)', cursor: 'pointer' }}>{job.title}</div>
+                                                <div style={{ fontSize: '14px', marginTop: '2px' }}>{job.company}</div>
+                                                <div style={{ fontSize: '12px', color: 'var(--linkedin-text-secondary)', marginTop: '2px' }}>UniConnect Networking • Remote</div>
+                                                <div style={{ fontSize: '12px', color: 'var(--success-color)', fontWeight: '600', marginTop: '4px' }}>
+                                                    {job.type} • Actively recruiting
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: 'var(--linkedin-text-secondary)', marginTop: '8px' }}>
+                                                    {new Date(job.createdAt).toLocaleDateString()}
+                                                </div>
+                                                
+                                                <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                                                    <button onClick={() => setSelectedJob(job)} className="li-btn li-btn-outline" style={{ fontSize: '14px', padding: '4px 12px' }}>Easy Apply</button>
+                                                    {isOwner && (
+                                                        <>
+                                                            <button onClick={() => handleToggleApplicants(job.id)} className="li-btn li-btn-ghost" style={{ fontSize: '14px', padding: '4px 12px' }}>
+                                                                {expandedJobId === job.id ? 'Hide Applicants' : 'View Applicants'}
+                                                            </button>
+                                                            <button onClick={() => handleDeleteJob(job.id)} className="li-btn li-btn-ghost" style={{ fontSize: '14px', padding: '4px 12px', color: '#dc3545' }}>Delete</button>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                {expandedJobId === job.id && (
+                                                    <div style={{ marginTop: '16px', padding: '12px', background: 'var(--linkedin-bg)', borderRadius: '8px' }}>
+                                                        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Applications</div>
+                                                        {(!jobApplicants[job.id] || jobApplicants[job.id].length === 0) ? (
+                                                            <p style={{ fontSize: '12px', color: 'var(--linkedin-text-secondary)' }}>No applications yet.</p>
+                                                        ) : (
+                                                            jobApplicants[job.id].map(app => (
+                                                                <div key={app.id} style={{ marginBottom: '8px', padding: '8px', background: '#fff', borderRadius: '4px' }}>
+                                                                    <div style={{ fontSize: '13px', fontWeight: '600' }}>Applicant ID: {app.applicantId}</div>
+                                                                    <div style={{ fontSize: '12px', marginTop: '4px' }}>{app.coverLetter}</div>
+                                                                    <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: 'var(--linkedin-blue)', textDecoration: 'none', fontWeight: '600', display: 'block', marginTop: '4px' }}>View Resume</a>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            </main>
+
+            {/* Application Modal */}
+            {selectedJob && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="li-card" style={{ width: '500px', padding: '24px', position: 'relative' }}>
+                        <button onClick={() => setSelectedJob(null)} style={{ position: 'absolute', right: '16px', top: '16px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>&times;</button>
+                        <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '4px' }}>Apply to {selectedJob.company}</h2>
+                        <p style={{ fontSize: '14px', color: 'var(--linkedin-text-secondary)', marginBottom: '24px' }}>{selectedJob.title}</p>
+                        
+                        <form onSubmit={handleSubmitApplication} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div>
+                                <label style={{ fontSize: '12px', color: 'var(--linkedin-text-secondary)', fontWeight: '600', display: 'block', marginBottom: '4px' }}>Cover Letter</label>
+                                <textarea required rows="5" className="li-input" value={applicationData.coverLetter} onChange={e => setApplicationData({...applicationData, coverLetter: e.target.value})} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '12px', color: 'var(--linkedin-text-secondary)', fontWeight: '600', display: 'block', marginBottom: '4px' }}>Resume URL</label>
+                                <input required className="li-input" value={applicationData.resumeUrl} onChange={e => setApplicationData({...applicationData, resumeUrl: e.target.value})} />
+                            </div>
+                            <button type="submit" className="li-btn li-btn-primary" style={{ alignSelf: 'flex-end' }}>Submit Application</button>
+                        </form>
+                        {applyStatus === 'success' && <p style={{ marginTop: '16px', color: 'var(--success-color)', textAlign: 'center' }}>Application sent!</p>}
                     </div>
                 </div>
             )}

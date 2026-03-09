@@ -38,9 +38,9 @@ export default function Register() {
     };
 
     return (
-        <div className="auth-container">
-            <div className="card" style={{ width: '450px', textAlign: 'center' }}>
-                <img src="/logoNoBack.png" alt="DECP Logo" style={{ height: '80px', marginBottom: '10px' }} />
+        <div className="auth-container" style={{ padding: '24px 12px' }}>
+            <div className="li-card" style={{ maxWidth: '450px', width: '100%', textAlign: 'center', padding: '24px' }}>
+                <div style={{ color: 'var(--linkedin-blue)', fontSize: '32px', fontWeight: 'bold', marginBottom: '10px' }}>in</div>
                 <h2>Join UniConnect</h2>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Join the community of students, alumni, and admins.</p>
 

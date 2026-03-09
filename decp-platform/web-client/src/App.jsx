@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import FeedPage from "./pages/FeedPage.jsx";
 import CareersPage from "./pages/CareersPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import NetworkingPage from "./pages/NetworkingPage.jsx";
 
 function App() {
     return (
@@ -28,6 +29,7 @@ function App() {
                         <Route path="/feed" element={<FeedPage />} />
                         <Route path="/careers" element={<CareersPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/network" element={<NetworkingPage />} />
                     </Routes>
                 </div>
             </div>

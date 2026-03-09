@@ -26,9 +26,9 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="auth-container">
-            <div className="card" style={{ width: '400px', textAlign: 'center' }}>
-                <img src="/logoNoBack.png" alt="DECP Logo" style={{ height: '80px', marginBottom: '10px' }} />
+        <div className="auth-container" style={{ padding: '0 12px' }}>
+            <div className="li-card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '24px' }}>
+                <div style={{ color: 'var(--linkedin-blue)', fontSize: '32px', fontWeight: 'bold', marginBottom: '10px' }}>in</div>
                 <h2>Welcome Back</h2>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Sign in to continue to UniConnect</p>
                 

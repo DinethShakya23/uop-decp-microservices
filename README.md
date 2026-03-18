@@ -134,6 +134,32 @@ task health
 task stop
 ```
 
+### Deploy On AWS EC2 (Docker Compose)
+
+Use a single Ubuntu EC2 instance (recommended: t3.large) for a budget-friendly deployment.
+
+1. Open EC2 Security Group inbound ports: `22`, `80`, `8080`
+2. SSH into EC2 and run:
+
+```bash
+git clone https://github.com/DinethShakya23/uop-decp-microservices.git
+cd uop-decp-microservices
+bash scripts/setup-ec2.sh
+newgrp docker
+cp .env.aws.example .env.aws
+```
+
+3. Edit `.env.aws` with strong passwords and your EC2 public URL/domain.
+4. Deploy:
+
+```bash
+bash scripts/deploy-ec2.sh
+```
+
+This uses:
+- `docker-compose.aws.yml` for full stack
+- `docker-compose.ec2.yml` to expose only `80` (web) and `8080` (gateway)
+
 > See [GETTING_STARTED.md](GETTING_STARTED.md) for the full developer setup guide with all available Task commands.
 
 ---

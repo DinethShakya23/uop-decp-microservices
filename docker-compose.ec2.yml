@@ -1,0 +1,50 @@
+services:
+  postgres:
+    ports: []
+
+  mongodb:
+    ports: []
+
+  redis:
+    ports: []
+
+  rabbitmq:
+    ports: []
+
+  auth-service:
+    ports: []
+
+  user-service:
+    ports: []
+
+  post-service:
+    ports: []
+
+  job-service:
+    ports: []
+
+  event-service:
+    ports: []
+
+  research-service:
+    ports: []
+
+  messaging-service:
+    ports: []
+
+  notification-service:
+    ports: []
+
+  analytics-service:
+    ports: []
+
+  mentorship-service:
+    ports: []
+
+  api-gateway:
+    ports:
+      - "8080:8080"
+
+  web-client:
+    ports:
+      - "80:80"

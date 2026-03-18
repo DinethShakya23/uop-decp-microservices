@@ -27,6 +27,7 @@ tasks:
     desc: Start the entire DECP platform (infra + backend + frontend)
     cmds:
       - task: infra
+      - task: db:init
       - task: build:backend
       - task: run:all
 
@@ -79,6 +80,12 @@ tasks:
     prompt: This will DELETE all database data. Continue?
     cmds:
       - docker compose down -v
+
+  db:init:
+    desc: Initialize all PostgreSQL and MongoDB databases
+    cmds:
+      - powershell -Command ".\scripts\init-databases.ps1"
+      - powershell -Command ".\scripts\init-mongodb.ps1"
 
   # ──────────────────────────────────────────
   # Backend - Build

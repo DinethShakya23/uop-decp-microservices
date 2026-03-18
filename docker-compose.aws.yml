@@ -1,0 +1,353 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: decp-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      POSTGRES_DB: ${POSTGRES_DB:-decp_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/01-init-postgres.sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-decp_user} -d ${POSTGRES_DB:-decp_db}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:6.0
+    container_name: decp-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin1234}
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: decp-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: decp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
+    container_name: decp-auth
+    ports:
+      - "8081:8081"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-your-very-secure-and-long-secret-key-for-decp-project}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      USER_SERVICE_INTERNAL_URL: http://user-service:8082/api/users/internal
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: user-service/Dockerfile
+    container_name: decp-user
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/decp_user_db
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  post-service:
+    build:
+      context: ./backend
+      dockerfile: post-service/Dockerfile
+    container_name: decp-post
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin1234}@mongodb:27017/decp_posts?authSource=admin
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  job-service:
+    build:
+      context: ./backend
+      dockerfile: job-service/Dockerfile
+    container_name: decp-job
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/decp_job_db
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  event-service:
+    build:
+      context: ./backend
+      dockerfile: event-service/Dockerfile
+    container_name: decp-event
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/decp_event_db
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  research-service:
+    build:
+      context: ./backend
+      dockerfile: research-service/Dockerfile
+    container_name: decp-research
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/decp_research_db
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  messaging-service:
+    build:
+      context: ./backend
+      dockerfile: messaging-service/Dockerfile
+    container_name: decp-messaging
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATA_MONGODB_URI_MESSAGING: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin1234}@mongodb:27017/decp_messaging?authSource=admin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: notification-service/Dockerfile
+    container_name: decp-notification
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_DATA_MONGODB_URI_NOTIFICATION: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-admin1234}@mongodb:27017/decp_notifications?authSource=admin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: ./backend
+      dockerfile: analytics-service/Dockerfile
+    container_name: decp-analytics
+    ports:
+      - "8089:8089"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/decp_analytics_db
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mentorship-service:
+    build:
+      context: ./backend
+      dockerfile: mentorship-service/Dockerfile
+    container_name: decp-mentorship
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/decp_mentorship_db
+      POSTGRES_USER: ${POSTGRES_USER:-decp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decp_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: api-gateway/Dockerfile
+    container_name: decp-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-your-very-secure-and-long-secret-key-for-decp-project}
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:3000}
+      AUTH_SERVICE_URI: http://auth-service:8081
+      USER_SERVICE_URI: http://user-service:8082
+      POST_SERVICE_URI: http://post-service:8083
+      JOB_SERVICE_URI: http://job-service:8084
+      EVENT_SERVICE_URI: http://event-service:8085
+      RESEARCH_SERVICE_URI: http://research-service:8086
+      MESSAGING_SERVICE_URI: http://messaging-service:8087
+      MESSAGING_SERVICE_WS_URI: ws://messaging-service:8087
+      NOTIFICATION_SERVICE_URI: http://notification-service:8088
+      ANALYTICS_SERVICE_URI: http://analytics-service:8089
+      MENTORSHIP_SERVICE_URI: http://mentorship-service:8090
+    depends_on:
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      post-service:
+        condition: service_started
+      job-service:
+        condition: service_started
+      event-service:
+        condition: service_started
+      research-service:
+        condition: service_started
+      messaging-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      mentorship-service:
+        condition: service_started
+    restart: unless-stopped
+
+  web-client:
+    build:
+      context: ./frontend/web-client
+    container_name: decp-web
+    ports:
+      - "3000:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  mongodb_data:

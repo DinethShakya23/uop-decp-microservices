@@ -50,6 +50,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const clientRef = useRef<Client | null>(null);
   const subsRef = useRef<{ unsubscribe: () => void }[]>([]);
   const currentConversationIdRef = useRef<string | null>(null);
+  const wsBaseUrl =
+    import.meta.env.VITE_WS_BASE_URL ||
+    `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8080`;
 
   useEffect(() => {
     currentConversationIdRef.current = currentConversation?.id || null;
@@ -66,7 +69,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     const token = getToken();
     const stompClient = new Client({
-      brokerURL: `ws://localhost:8080/ws/chat/websocket?token=${encodeURIComponent(token || "")}`,
+      brokerURL: `${wsBaseUrl}/ws/chat/websocket?token=${encodeURIComponent(token || "")}`,
       reconnectDelay: 5000,
       onConnect: () => {
         setConnected(true);
@@ -112,39 +115,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     subsRef.current = [];
 
     conversations.forEach((conv) => {
-      const msgSub = client.subscribe(
-        `/topic/messages/${conv.id}`,
-        (frame) => {
-          const msg: MessageResponse = JSON.parse(frame.body);
+      const msgSub = client.subscribe(`/topic/messages/${conv.id}`, (frame) => {
+        const msg: MessageResponse = JSON.parse(frame.body);
 
-          // If this message belongs to the currently active conversation
-          if (currentConversationIdRef.current === conv.id) {
-            setMessages((prev) => [...prev, msg]);
-            // If we are actively looking at it, it should technically be marked as read here too
-            // Either by calling chatService.markRead or the user scrolling.
-          } else {
-            // Update unread count for other conversations
-            setConversations((prev) =>
-              prev
-                .map((c) =>
-                  c.id === conv.id
-                    ? {
+        // If this message belongs to the currently active conversation
+        if (currentConversationIdRef.current === conv.id) {
+          setMessages((prev) => [...prev, msg]);
+          // If we are actively looking at it, it should technically be marked as read here too
+          // Either by calling chatService.markRead or the user scrolling.
+        } else {
+          // Update unread count for other conversations
+          setConversations((prev) =>
+            prev
+              .map((c) =>
+                c.id === conv.id
+                  ? {
                       ...c,
                       lastMessage: msg.content,
                       lastMessageAt: msg.createdAt,
                       unreadCount: (c.unreadCount || 0) + 1,
                     }
-                    : c,
-                )
-                .sort(
-                  (a, b) =>
-                    new Date(b.lastMessageAt || b.createdAt).getTime() -
-                    new Date(a.lastMessageAt || a.createdAt).getTime(),
-                ),
-            );
-          }
-        },
-      );
+                  : c,
+              )
+              .sort(
+                (a, b) =>
+                  new Date(b.lastMessageAt || b.createdAt).getTime() -
+                  new Date(a.lastMessageAt || a.createdAt).getTime(),
+              ),
+          );
+        }
+      });
       subsRef.current.push(msgSub);
     });
 
@@ -161,7 +161,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     console.log("Conversations response:", res.data);
     console.log("Number of conversations:", res.data.length);
     res.data.forEach((conv, idx) => {
-      console.log(`Conversation ${idx}:`, { id: conv.id, participants: conv.participants, lastMessage: conv.lastMessage });
+      console.log(`Conversation ${idx}:`, {
+        id: conv.id,
+        participants: conv.participants,
+        lastMessage: conv.lastMessage,
+      });
     });
     setConversations(res.data);
   }, [isAuthenticated]);
@@ -181,49 +185,56 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setCurrentConversation(null);
   }, []);
 
-  const selectConversation = useCallback(async (conv: ConversationResponse) => {
-    console.log("=== Selecting conversation ===");
-    console.log("Conversation object:", conv);
-    console.log("Conversation ID:", conv.id);
-    console.log("Conversation ID type:", typeof conv.id);
-    
-    setCurrentConversation(conv);
-    setMessages([]); // Clear previous messages
-    try {
-      console.log("Calling chatService.getMessages with ID:", conv.id);
-      const res = await chatService.getMessages(conv.id);
-      console.log("Full API response:", res);
-      console.log("Response status:", res.status);
-      console.log("Response data:", res.data);
-      console.log("Response data type:", typeof res.data);
-      console.log("Response data keys:", Object.keys(res.data || {}));
-      
-      // Handle both direct array and Page object responses
-      let fetchedMessages: MessageResponse[] = [];
-      if (Array.isArray(res.data)) {
-        console.log("Response is an array");
-        fetchedMessages = res.data;
-      } else if (res.data && res.data.content && Array.isArray(res.data.content)) {
-        console.log("Response is a Page object with content array");
-        fetchedMessages = res.data.content;
-      } else {
-        console.log("Response structure is unexpected");
-      }
-      
-      console.log("Messages to display:", fetchedMessages);
-      console.log("Number of messages:", fetchedMessages.length);
-      setMessages(fetchedMessages);
+  const selectConversation = useCallback(
+    async (conv: ConversationResponse) => {
+      console.log("=== Selecting conversation ===");
+      console.log("Conversation object:", conv);
+      console.log("Conversation ID:", conv.id);
+      console.log("Conversation ID type:", typeof conv.id);
 
-      // Clear unread indicator locally
-      await markConversationRead(conv.id);
-    } catch (err) {
-      console.error("Failed to fetch messages:", err);
-      if (err instanceof Error) {
-        console.error("Error message:", err.message);
+      setCurrentConversation(conv);
+      setMessages([]); // Clear previous messages
+      try {
+        console.log("Calling chatService.getMessages with ID:", conv.id);
+        const res = await chatService.getMessages(conv.id);
+        console.log("Full API response:", res);
+        console.log("Response status:", res.status);
+        console.log("Response data:", res.data);
+        console.log("Response data type:", typeof res.data);
+        console.log("Response data keys:", Object.keys(res.data || {}));
+
+        // Handle both direct array and Page object responses
+        let fetchedMessages: MessageResponse[] = [];
+        if (Array.isArray(res.data)) {
+          console.log("Response is an array");
+          fetchedMessages = res.data;
+        } else if (
+          res.data &&
+          res.data.content &&
+          Array.isArray(res.data.content)
+        ) {
+          console.log("Response is a Page object with content array");
+          fetchedMessages = res.data.content;
+        } else {
+          console.log("Response structure is unexpected");
+        }
+
+        console.log("Messages to display:", fetchedMessages);
+        console.log("Number of messages:", fetchedMessages.length);
+        setMessages(fetchedMessages);
+
+        // Clear unread indicator locally
+        await markConversationRead(conv.id);
+      } catch (err) {
+        console.error("Failed to fetch messages:", err);
+        if (err instanceof Error) {
+          console.error("Error message:", err.message);
+        }
+        setMessages([]);
       }
-      setMessages([]);
-    }
-  }, [markConversationRead]);
+    },
+    [markConversationRead],
+  );
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -244,11 +255,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [connected, currentConversation, user],
   );
 
-  const startConversation = useCallback(async (participantIds: number[], participantNames: string[]) => {
-    const res = await chatService.createConversation(participantIds, participantNames);
-    setConversations((prev) => [res.data, ...prev]);
-    return res.data;
-  }, []);
+  const startConversation = useCallback(
+    async (participantIds: number[], participantNames: string[]) => {
+      const res = await chatService.createConversation(
+        participantIds,
+        participantNames,
+      );
+      setConversations((prev) => [res.data, ...prev]);
+      return res.data;
+    },
+    [],
+  );
 
   return (
     <ChatContext.Provider

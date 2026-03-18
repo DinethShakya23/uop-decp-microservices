@@ -1,17 +1,25 @@
 package com.decp.research.service;
 
-import com.decp.research.config.ResearchEventPublisher;
-import com.decp.research.dto.*;
-import com.decp.research.model.*;
-import com.decp.research.repository.ResearchRepository;
-import com.decp.research.repository.ResearchVersionRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.decp.research.config.ResearchEventPublisher;
+import com.decp.research.dto.CitationResponse;
+import com.decp.research.dto.ResearchRequest;
+import com.decp.research.dto.ResearchResponse;
+import com.decp.research.dto.ResearchVersionRequest;
+import com.decp.research.dto.ResearchVersionResponse;
+import com.decp.research.model.Research;
+import com.decp.research.model.ResearchCategory;
+import com.decp.research.model.ResearchTag;
+import com.decp.research.model.ResearchVersion;
+import com.decp.research.repository.ResearchRepository;
+import com.decp.research.repository.ResearchVersionRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +51,7 @@ public class ResearchService {
                 saved.getId(),
                 userId,
                 userName,
-                ProjectMember.ProjectRole.OWNER
+                "OWNER"
         );
 
         // Create initial version
